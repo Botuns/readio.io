@@ -1,0 +1,12 @@
+node_modules
+dist
+dist-ssr
+*.local
+.env*.local
+docs/*.pdf
+.DS_Store
+coverage
+test-results
+playwright-report
+.vercel
+docs/api-samples/
