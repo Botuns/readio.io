@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      name="description"
+      content="Review candidate interview sessions: transcript, identity verification and integrity audit."
+    />
+    <meta name="theme-color" content="#FAFAFB" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#07070F" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Readie Integrity Audit</title>
+    <script>
+      // Applies the saved theme before first paint so there is no flash.
+      (function () {
+        var preference = 'system';
+        try {
+          preference = localStorage.getItem('readie:theme') || 'system';
+        } catch (error) {}
+        var dark =
+          preference === 'dark' ||
+          (preference !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
