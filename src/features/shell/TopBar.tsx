@@ -16,7 +16,7 @@ export function TopBar({ onOpenShortcuts }: TopBarProps) {
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between gap-3 safe-x">
         <Link
           to={campaignPath(DEFAULT_CAMPAIGN_ID)}
-          className="flex min-h-11 items-center gap-2.5 rounded-control"
+          className="flex min-h-11 min-w-0 items-center gap-2.5 rounded-control"
           aria-label="Readie Integrity Audit, go to campaign overview"
         >
           <svg viewBox="0 0 32 32" aria-hidden="true" className="size-7 shrink-0">
@@ -26,12 +26,12 @@ export function TopBar({ onOpenShortcuts }: TopBarProps) {
               fill="#fff"
             />
           </svg>
-          <span className="text-sm font-semibold tracking-tight text-ink">
+          <span className="truncate text-sm font-semibold tracking-tight whitespace-nowrap text-ink">
             Readie <span className="font-normal text-muted">Integrity audit</span>
           </span>
         </Link>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5">
           <DataSourceMenu />
           <Hint label="Keyboard shortcuts (?)">
             <Button

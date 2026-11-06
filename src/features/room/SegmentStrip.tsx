@@ -27,6 +27,7 @@ function describe(segment: RecordingSegment): string {
  */
 export function SegmentStrip({ segments, selectedId, onSelect }: SegmentStripProps) {
   const counts = countSegments(segments);
+  const presentStates = SEGMENT_STATES.filter((state) => counts[state] > 0);
 
   return (
     <section
@@ -76,26 +77,29 @@ export function SegmentStrip({ segments, selectedId, onSelect }: SegmentStripPro
         })}
       </div>
 
-      <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
-        {SEGMENT_STATES.filter((state) => counts[state] > 0).map((state) => {
-          const meta = segmentStateMeta(state);
-          return (
-            <li key={state} className="flex items-center gap-1.5">
-              <span
-                className={cn(
-                  'inline-flex size-4 items-center justify-center rounded',
-                  TONE_CLASSES[meta.tone],
-                )}
-              >
-                <meta.Icon aria-hidden="true" className="size-3" />
-              </span>
-              <span className="tabular">
-                {meta.label} {counts[state]}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
+      {/* The legend only earns its space when segments differ in state. */}
+      {presentStates.length > 1 && (
+        <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
+          {presentStates.map((state) => {
+            const meta = segmentStateMeta(state);
+            return (
+              <li key={state} className="flex items-center gap-1.5">
+                <span
+                  className={cn(
+                    'inline-flex size-4 items-center justify-center rounded',
+                    TONE_CLASSES[meta.tone],
+                  )}
+                >
+                  <meta.Icon aria-hidden="true" className="size-3" />
+                </span>
+                <span className="tabular">
+                  {meta.label} {counts[state]}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </section>
   );
 }

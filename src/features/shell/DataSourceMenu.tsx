@@ -74,7 +74,11 @@ export function DataSourceMenu() {
           <Icon aria-hidden="true" className="size-3.5" />
           {SOURCE_COPY[source].label}
           {source === 'mock' && scenario !== 'default' && (
-            <span className="text-muted">· {SCENARIO_LABELS[scenario]}</span>
+            <>
+              <span className="hidden text-muted md:inline">· {SCENARIO_LABELS[scenario]}</span>
+              <span aria-hidden="true" className="size-1.5 rounded-full bg-warning md:hidden" />
+              <span className="sr-only md:hidden">, scenario: {SCENARIO_LABELS[scenario]}</span>
+            </>
           )}
         </span>
       </Popover.Trigger>
