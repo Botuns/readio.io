@@ -36,12 +36,17 @@ export function describeError(error: ApiError, subject: string): ErrorCopy {
         canRetry: true,
       };
     case 'unauthorized':
-      return {
-        title: 'Not authorised',
-        description:
-          'The API rejected the credentials sent with this request. Check VITE_API_CUSTOM_AUTH and VITE_API_BASIC_AUTH in .env.local, then restart the dev server.',
-        canRetry: true,
-      };
+      return error.status === null
+        ? {
+            title: 'Sign in to load live data',
+            description: `Live mode needs the API credentials from the hackathon brief. Sign in to load ${subject}, or switch to mock data.`,
+            canRetry: false,
+          }
+        : {
+            title: 'The API rejected these credentials',
+            description: `The request for ${subject} was refused (${error.status}). Sign in again with the username, password and access key from the hackathon brief.`,
+            canRetry: true,
+          };
     case 'not_found':
       return {
         title: 'Not found',
@@ -76,7 +81,10 @@ export function technicalDetail(error: ApiError): [string, string][] {
       lines.push(['Status', `${error.status} ${error.statusText}`.trim()]);
       return lines;
     case 'unauthorized':
-      lines.push(['Status', String(error.status)]);
+      lines.push([
+        'Status',
+        error.status === null ? 'Not sent: nobody is signed in' : String(error.status),
+      ]);
       return lines;
     case 'not_found':
       lines.push([

@@ -1,6 +1,9 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Outlet, ScrollRestoration } from 'react-router';
+import { useCredentials } from '@/api/credentials';
 import { TopBar } from '@/features/shell/TopBar';
+import { getDataSource } from '@/lib/dataSource';
+import { openSignIn, useSignInOpen } from '@/lib/signIn';
 import { useHotkeys } from '@/lib/useHotkeys';
 
 /** Downloaded the first time the shortcuts list is opened. */
@@ -9,7 +12,25 @@ const ShortcutsSheet = lazy(async () => {
   return { default: module.ShortcutsSheet };
 });
 
+/** Downloaded the first time a sign-in is needed. */
+const SignInDialog = lazy(async () => {
+  const module = await import('@/features/shell/SignInDialog');
+  return { default: module.SignInDialog };
+});
+
 export function RootLayout() {
+  const credentials = useCredentials();
+  const signInOpen = useSignInOpen();
+  const [signInWanted, setSignInWanted] = useState(false);
+  if (signInOpen && !signInWanted) setSignInWanted(true);
+
+  // Live mode with nobody signed in: offer the portal's own sign-in straight
+  // away. Requests are not sent without credentials, so the browser never gets
+  // the chance to show its built-in password prompt.
+  useEffect(() => {
+    if (getDataSource() === 'live' && credentials === null) openSignIn();
+  }, [credentials]);
+
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [shortcutsWanted, setShortcutsWanted] = useState(false);
   const openShortcuts = () => {
@@ -37,6 +58,11 @@ export function RootLayout() {
       {shortcutsWanted && (
         <Suspense fallback={null}>
           <ShortcutsSheet open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+        </Suspense>
+      )}
+      {signInWanted && (
+        <Suspense fallback={null}>
+          <SignInDialog />
         </Suspense>
       )}
       {/* Returning to the table with Back restores where the auditor had scrolled to. */}

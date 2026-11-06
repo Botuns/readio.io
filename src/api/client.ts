@@ -1,4 +1,6 @@
 import type { z } from 'zod';
+import { getDataSource } from '@/lib/dataSource';
+import { getCredentials, type CredentialInput } from './credentials';
 import { env } from './env';
 import type { ApiError, ApiResult } from './errors';
 import { whenApiReady } from './ready';
@@ -13,13 +15,18 @@ interface GetOptions<T> {
   schema: z.ZodType<T>;
   signal?: AbortSignal;
   timeoutMs?: number;
+  /** Overrides the stored credentials. Used by the sign-in dialog to test a pair before saving it. */
+  credentials?: CredentialInput;
 }
 
-function authHeaders(): HeadersInit {
+/** Sent in mock mode when nobody is signed in; the mock layer does not check them. */
+const MOCK_CREDENTIALS: CredentialInput = { customAuth: 'mock', basicAuth: 'bW9jazptb2Nr' };
+
+function authHeaders(credentials: CredentialInput): HeadersInit {
   return {
     'Content-Type': 'application/json',
-    MyAuthorizationx: env.VITE_API_CUSTOM_AUTH,
-    Authorization: `Basic ${env.VITE_API_BASIC_AUTH}`,
+    MyAuthorizationx: credentials.customAuth,
+    Authorization: `Basic ${credentials.basicAuth}`,
   };
 }
 
@@ -30,6 +37,7 @@ function failure(error: ApiError): ApiResult<never> {
 /**
  * The single entry point to the Readie API. Sends all three required headers
  * on every call, enforces a timeout, and validates the body before returning.
+ * Credentials come from the sign-in dialog or, in local development, from env.
  *
  * A caller-initiated abort is re-thrown so TanStack Query can treat it as a
  * cancellation; every other failure comes back as a typed `ApiError`.
@@ -39,8 +47,16 @@ export async function apiGet<T>({
   schema,
   signal,
   timeoutMs = DEFAULT_TIMEOUT_MS,
+  credentials: override,
 }: GetOptions<T>): Promise<ApiResult<T>> {
   const endpoint = `${env.VITE_API_BASE_URL}${path}`;
+
+  // Live requests are never sent without credentials: the API would answer 401
+  // and nothing is gained. The UI offers the sign-in dialog instead.
+  const credentials =
+    override ?? getCredentials() ?? (getDataSource() === 'mock' ? MOCK_CREDENTIALS : null);
+  if (credentials === null) return failure({ kind: 'unauthorized', endpoint, status: null });
+
   const controller = new AbortController();
   // Held in an object so the compiler does not assume it is still false after an await.
   const state = { timedOut: false };
@@ -60,7 +76,11 @@ export async function apiGet<T>({
       await whenApiReady();
       response = await fetch(endpoint, {
         method: 'GET',
-        headers: authHeaders(),
+        headers: authHeaders(credentials),
+        // The app sends its own Authorization header. Omitting browser
+        // credentials also stops the browser showing its built-in password
+        // prompt when the API answers 401 with `WWW-Authenticate: Basic`.
+        credentials: 'omit',
         signal: controller.signal,
       });
     } catch (cause) {

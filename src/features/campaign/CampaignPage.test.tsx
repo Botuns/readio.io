@@ -98,7 +98,9 @@ describe('campaign overview', () => {
   it('uses dedicated copy for unauthorised and network errors', async () => {
     setScenario('unauthorized');
     const first = renderApp('/jobs/campaign/119');
-    expect(await screen.findByRole('heading', { name: 'Not authorised' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'The API rejected these credentials' }),
+    ).toBeInTheDocument();
     first.unmount();
 
     setScenario('offline');

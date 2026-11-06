@@ -27,6 +27,9 @@ export default defineConfig({
   webServer: {
     command: `pnpm exec vite build --mode mock --outDir dist-e2e && pnpm exec vite preview --outDir dist-e2e --port ${PORT} --strictPort`,
     url: BASE_URL,
+    // The test build carries no credentials, like a public deployment, so the
+    // sign-in flow is exercised and nothing real can leak into `dist-e2e`.
+    env: { VITE_API_CUSTOM_AUTH: '', VITE_API_BASIC_AUTH: '' },
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
   },

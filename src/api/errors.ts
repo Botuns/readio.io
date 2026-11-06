@@ -6,7 +6,8 @@ export type ApiError =
   | { kind: 'timeout'; endpoint: string; timeoutMs: number }
   | { kind: 'http'; endpoint: string; status: number; statusText: string }
   | { kind: 'not_found'; endpoint: string; status: number | null }
-  | { kind: 'unauthorized'; endpoint: string; status: number }
+  /** `status` is null when the request was not sent because nobody is signed in. */
+  | { kind: 'unauthorized'; endpoint: string; status: number | null }
   | { kind: 'parse'; endpoint: string; issues: string[] };
 
 export type ApiErrorKind = ApiError['kind'];

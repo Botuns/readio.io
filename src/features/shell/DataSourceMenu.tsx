@@ -1,12 +1,15 @@
 import { useQueryClient } from '@tanstack/react-query';
-import { Check, Database, FlaskConical } from 'lucide-react';
+import { Check, Database, FlaskConical, LogIn, LogOut } from 'lucide-react';
 import { Popover } from 'radix-ui';
 import { useState } from 'react';
 import { Link } from 'react-router';
+import { clearCredentials, useCredentials, type ApiCredentials } from '@/api/credentials';
+import { Button } from '@/components/ui/Button';
 import { buttonClassName } from '@/components/ui/buttonStyles';
 import { cn } from '@/lib/cn';
 import { getDataSource, switchDataSource, type DataSource } from '@/lib/dataSource';
 import { campaignPath } from '@/lib/routes';
+import { openSignIn } from '@/lib/signIn';
 import { MOCK_SCENARIOS_CAMPAIGN_ID } from '@/mocks/constants';
 import {
   getScenario,
@@ -17,9 +20,16 @@ import {
 } from '@/mocks/scenarios';
 
 const SOURCE_COPY: Record<DataSource, { label: string; hint: string }> = {
-  live: { label: 'Live API', hint: 'Calls the Readie hackathon endpoint.' },
+  live: { label: 'Live API', hint: 'Calls the Readie hackathon endpoint. Needs a sign-in.' },
   mock: { label: 'Mock data', hint: 'Fixtures served by a service worker. Works offline.' },
 };
+
+function describeAccount(credentials: ApiCredentials | null): string {
+  if (credentials === null) return 'Not signed in.';
+  if (credentials.origin === 'environment')
+    return 'Using the credentials from this build’s environment.';
+  return credentials.username === null ? 'Signed in.' : `Signed in as ${credentials.username}.`;
+}
 
 interface OptionProps {
   selected: boolean;
@@ -56,6 +66,7 @@ function Option({ selected, label, hint, onSelect }: OptionProps) {
 export function DataSourceMenu() {
   const queryClient = useQueryClient();
   const source = getDataSource();
+  const credentials = useCredentials();
   const [scenario, setActiveScenario] = useState<Scenario>(getScenario);
   const [open, setOpen] = useState(false);
   const Icon = source === 'mock' ? FlaskConical : Database;
@@ -99,12 +110,54 @@ export function DataSourceMenu() {
                 label={SOURCE_COPY[option].label}
                 hint={SOURCE_COPY[option].hint}
                 onSelect={() => {
-                  if (option !== source) switchDataSource(option);
+                  if (option === source) return;
+                  if (option === 'live' && credentials === null) {
+                    // Nothing to send yet: ask for credentials first.
+                    setOpen(false);
+                    openSignIn();
+                    return;
+                  }
+                  switchDataSource(option);
                 }}
               />
             ))}
             <p className="px-3 pt-1 pb-2 text-xs text-muted">Switching reloads the page.</p>
           </div>
+
+          {source === 'live' && (
+            <div className="border-t border-line px-3 pt-3 pb-2">
+              <p className="eyebrow">Account</p>
+              <p className="mt-1.5 text-sm text-ink">{describeAccount(credentials)}</p>
+              <div className="mt-2.5 flex gap-2">
+                {credentials?.origin !== 'environment' && (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setOpen(false);
+                      openSignIn();
+                    }}
+                  >
+                    <LogIn aria-hidden="true" className="size-3.5" />
+                    {credentials === null ? 'Sign in' : 'Switch account'}
+                  </Button>
+                )}
+                {credentials?.origin === 'signed_in' && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      clearCredentials();
+                      setOpen(false);
+                      void queryClient.resetQueries();
+                    }}
+                  >
+                    <LogOut aria-hidden="true" className="size-3.5" />
+                    Sign out
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
 
           {source === 'mock' && (
             <div role="radiogroup" aria-label="Mock scenario" className="border-t border-line pt-1">

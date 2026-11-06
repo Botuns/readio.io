@@ -25,6 +25,11 @@ function createApiProxy(upstream: string): Record<string, ProxyOptions> {
           proxyReq.removeHeader('origin');
           proxyReq.removeHeader('referer');
         });
+        // Without this header the browser has no reason to show its own
+        // password prompt on a 401. The client also sends `credentials: 'omit'`.
+        proxy.on('proxyRes', (proxyRes) => {
+          delete proxyRes.headers['www-authenticate'];
+        });
       },
     },
   };

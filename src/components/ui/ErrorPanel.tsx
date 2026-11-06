@@ -1,5 +1,6 @@
 import {
   FileQuestion,
+  LogIn,
   Lock,
   RefreshCw,
   SearchX,
@@ -12,6 +13,7 @@ import type { ReactNode } from 'react';
 import type { ApiError } from '@/api/errors';
 import { assertNever } from '@/domain/assertNever';
 import { describeError, technicalDetail } from '@/lib/errorCopy';
+import { openSignIn } from '@/lib/signIn';
 import { Button } from './Button';
 import { EmptyState } from './EmptyState';
 
@@ -68,8 +70,18 @@ export function ErrorPanel({
         description={description ?? copy.description}
         action={
           <>
+            {error.kind === 'unauthorized' && (
+              <Button variant="primary" onClick={openSignIn}>
+                <LogIn aria-hidden="true" className="size-4" />
+                {error.status === null ? 'Sign in' : 'Sign in again'}
+              </Button>
+            )}
             {copy.canRetry && (
-              <Button variant="primary" onClick={onRetry} disabled={isRetrying}>
+              <Button
+                variant={error.kind === 'unauthorized' ? 'secondary' : 'primary'}
+                onClick={onRetry}
+                disabled={isRetrying}
+              >
                 <RefreshCw
                   aria-hidden="true"
                   className={isRetrying ? 'size-4 animate-spin' : 'size-4'}

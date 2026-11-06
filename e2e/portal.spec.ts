@@ -264,6 +264,103 @@ test.describe('async states through mock scenarios', () => {
   });
 });
 
+test.describe('live mode sign-in', () => {
+  const ACCOUNT = { username: 'auditor', password: 's3cret', accessKey: 'KEY-1' };
+  const BASIC = `Basic ${Buffer.from(`${ACCOUNT.username}:${ACCOUNT.password}`).toString('base64')}`;
+
+  /**
+   * Stands in for the live API so the test needs no real credentials: it
+   * answers 401 with a Basic challenge unless the expected pair is sent.
+   */
+  async function stubLiveApi(page: Page): Promise<(string | null)[]> {
+    const authorizations: (string | null)[] = [];
+    await page.route('**/api/jobs/**', async (route) => {
+      const headers = route.request().headers();
+      authorizations.push(headers.authorization ?? null);
+      if (headers.authorization === BASIC && headers.myauthorizationx === ACCOUNT.accessKey) {
+        await route.fulfill({ json: [] });
+      } else {
+        await route.fulfill({
+          status: 401,
+          headers: { 'WWW-Authenticate': 'Basic realm="Realm"' },
+          json: { status: 401, error: 'Unauthorized' },
+        });
+      }
+    });
+    return authorizations;
+  }
+
+  async function fillSignIn(page: Page, password: string): Promise<void> {
+    const dialog = page.getByRole('dialog', { name: 'Sign in to the Readie API' });
+    await dialog.getByLabel('Username').fill(ACCOUNT.username);
+    await dialog.getByLabel('Password', { exact: true }).fill(password);
+    await dialog.getByLabel('Access key').fill(ACCOUNT.accessKey);
+  }
+
+  test('choosing Live API opens the sign-in dialog, then loads live data with those credentials', async ({
+    page,
+  }) => {
+    const authorizations = await stubLiveApi(page);
+    await page.goto('/jobs/campaign/119');
+    await expect(page.locator('[data-job-row]')).toHaveCount(4);
+
+    await page.getByRole('button', { name: /Data source/ }).click();
+    await page.getByRole('radio', { name: /Live API/ }).click();
+
+    const dialog = page.getByRole('dialog', { name: 'Sign in to the Readie API' });
+    await expect(dialog).toBeVisible();
+    // Nothing has been sent to the API, so the browser has had no 401 to react to.
+    expect(authorizations).toEqual([]);
+
+    await fillSignIn(page, ACCOUNT.password);
+    await dialog.getByRole('button', { name: 'Sign in and use live data' }).click();
+
+    await expect(
+      page.getByRole('heading', { name: 'No candidates in campaign 119' }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: /Data source/ })).toContainText('Live API');
+    expect(authorizations.length).toBeGreaterThan(0);
+    expect(authorizations.every((value) => value === BASIC)).toBe(true);
+
+    await page.getByRole('button', { name: /Data source/ }).click();
+    await expect(page.getByText('Signed in as auditor.')).toBeVisible();
+    await page.getByRole('button', { name: 'Sign out' }).click();
+
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByRole('heading', { name: 'Sign in to load live data' })).toBeVisible();
+  });
+
+  test('rejected credentials are reported inside the dialog', async ({ page }) => {
+    const authorizations = await stubLiveApi(page);
+    const nativeDialogs: string[] = [];
+    page.on('dialog', (nativeDialog) => nativeDialogs.push(nativeDialog.type()));
+    await page.addInitScript(() => {
+      window.localStorage.setItem('readie:data-source', 'live');
+    });
+
+    await page.goto('/jobs/campaign/119');
+    const dialog = page.getByRole('dialog', { name: 'Sign in to the Readie API' });
+    await expect(dialog).toBeVisible();
+    expect(authorizations).toEqual([]);
+
+    await fillSignIn(page, 'wrong-password');
+    await dialog.getByRole('button', { name: 'Sign in', exact: true }).click();
+
+    await expect(dialog.getByRole('alert')).toContainText('The API rejected these credentials');
+    await expect(dialog).toBeVisible();
+    expect(authorizations).toHaveLength(1);
+    expect(nativeDialogs).toEqual([]);
+
+    await fillSignIn(page, ACCOUNT.password);
+    await dialog.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await expect(dialog).toBeHidden();
+    await expect(
+      page.getByRole('heading', { name: 'No candidates in campaign 119' }),
+    ).toBeVisible();
+  });
+});
+
 test.describe('offline and mobile', () => {
   test('makes no request to any other host, so fonts and icons are self-hosted', async ({
     page,
