@@ -72,7 +72,7 @@ export function DataSourceMenu() {
       <Popover.Trigger className={buttonClassName({ size: 'sm' })}>
         <span className="btn-content">
           <Icon aria-hidden="true" className="size-3.5" />
-          <span className="sr-only">Data source:</span>
+          <span className="sr-only">Data source: </span>
           {SOURCE_COPY[source].label}
           {source === 'mock' && scenario !== 'default' && (
             <>

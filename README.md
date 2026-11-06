@@ -14,7 +14,7 @@ Built for the Readie hackathon brief (`docs/readie-hackathon-spec.pdf`, not comm
 
 More in [`docs/screenshots/`](docs/screenshots).
 
-**Live demo:** not deployed yet. See [Deploying](#deploying).
+**Live demo:** https://readie-audit-portal.vercel.app (mock data by default, so it keeps working after the hackathon endpoint is retired; no credentials are deployed).
 
 ## Run it
 
@@ -123,6 +123,8 @@ Radix primitives for tabs, dialogs, popovers and tooltips; a skip link; visible 
 Routes are code-split and both page chunks start downloading at start-up. Critical-path JavaScript for the campaign page is about 219 kB gzip; Motion's animation engine (32 kB) and the filter sheet load on demand. Mock mode adds a 171 kB chunk (MSW plus fixtures) that live mode never downloads.
 
 Lighthouse mobile performance, measured on a mock-mode build on a 2016 laptop, ranged from 64 to 83 across runs, with first contentful paint at 0.8 s, largest contentful paint between 3.7 and 4.8 s, and layout shift at or near 0. It was not measured on the deployed site.
+
+On the deployed site I verified in Chrome: the redirect from `/`, a row click, a pasted room URL with a raw `@`, a hard refresh that keeps the room and tab, no requests to other hosts, and that a same-origin request reaches the API through the rewrite. Live mode on the deployed site is not verified end to end, because no credentials are deployed.
 
 ## Deploying
 
