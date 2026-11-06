@@ -5,12 +5,7 @@ import { useId, useState } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { apiGet } from '@/api/client';
-import {
-  encodeBasicAuth,
-  normaliseBasicToken,
-  saveCredentials,
-  type CredentialInput,
-} from '@/api/credentials';
+import { encodeBasicAuth, saveCredentials } from '@/api/credentials';
 import type { ApiError } from '@/api/errors';
 import { Button } from '@/components/ui/Button';
 import { assertNever } from '@/domain/assertNever';
@@ -21,19 +16,17 @@ import { closeSignIn, useSignInOpen } from '@/lib/signIn';
 const INPUT_CLASS =
   'h-11 w-full rounded-control border border-line-strong bg-surface px-3 text-base text-ink shadow-[inset_0_1px_2px_rgb(0_0_0/0.05)] transition-colors duration-150 placeholder:text-muted hover:border-muted focus:border-accent focus:outline-2 focus:outline-offset-0 focus:outline-accent/30 md:text-sm';
 
-type Mode = 'password' | 'token';
-
 /** Why a credential check failed, in words; null when the pair was accepted. */
 function describeRejection(error: ApiError): string | null {
   switch (error.kind) {
     case 'unauthorized':
-      return 'The API rejected these credentials. Check the username, password and access key, then try again.';
+      return 'The API rejected this username and password. Check them and try again.';
     case 'http':
-      return `The API could not check these credentials (${error.status}). The access key is the usual cause.`;
+      return `The API could not check this sign-in (${error.status}). This build may be missing its access key (VITE_API_CUSTOM_AUTH).`;
     case 'network':
       return error.offline
         ? 'You are offline. Reconnect, then try again.'
-        : 'Could not reach the API to check these credentials. Try again.';
+        : 'Could not reach the API to check this sign-in. Try again.';
     case 'timeout':
       return 'The API took too long to answer. Try again.';
     case 'not_found':
@@ -50,37 +43,21 @@ function SignInForm() {
   const id = useId();
   const switching = getDataSource() !== 'live';
 
-  const [mode, setMode] = useState<Mode>('password');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [token, setToken] = useState('');
-  const [accessKey, setAccessKey] = useState('');
   const [remember, setRemember] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [checking, setChecking] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
 
-  const readCredentials = (): CredentialInput | string => {
-    if (mode === 'password' && (username.trim() === '' || password === '')) {
-      return 'Enter your username and password.';
-    }
-    if (mode === 'token' && normaliseBasicToken(token) === '') return 'Enter the Basic token.';
-    if (accessKey.trim() === '') return 'Enter the access key.';
-    return {
-      basicAuth:
-        mode === 'password'
-          ? encodeBasicAuth(username.trim(), password)
-          : normaliseBasicToken(token),
-      customAuth: accessKey.trim(),
-    };
-  };
-
   const submit = async () => {
-    const credentials = readCredentials();
-    if (typeof credentials === 'string') {
-      setProblem(credentials);
+    if (username.trim() === '' || password === '') {
+      setProblem('Enter your username and password.');
       return;
     }
+    // The app builds the Authorization header itself; the access key header is
+    // added by the API client from the build's environment.
+    const credentials = { basicAuth: encodeBasicAuth(username.trim(), password) };
 
     if (switching) {
       // Mock mode answers every request from fixtures, so the pair cannot be
@@ -111,7 +88,6 @@ function SignInForm() {
   };
 
   const RevealIcon = revealed ? EyeOff : Eye;
-  const secretLabel = mode === 'password' ? 'Password' : 'Basic token';
 
   return (
     <form
@@ -122,49 +98,43 @@ function SignInForm() {
       noValidate
       className="mt-4 space-y-3.5"
     >
-      {mode === 'password' && (
-        <div>
-          <label htmlFor={`${id}-username`} className="text-13 font-medium text-ink">
-            Username
-          </label>
-          <input
-            id={`${id}-username`}
-            name="username"
-            autoComplete="username"
-            autoCapitalize="none"
-            autoCorrect="off"
-            spellCheck={false}
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
-            className={`${INPUT_CLASS} mt-1.5`}
-          />
-        </div>
-      )}
+      <div>
+        <label htmlFor={`${id}-username`} className="text-13 font-medium text-ink">
+          Username
+        </label>
+        <input
+          id={`${id}-username`}
+          name="username"
+          autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          value={username}
+          onChange={(event) => setUsername(event.target.value)}
+          className={`${INPUT_CLASS} mt-1.5`}
+        />
+      </div>
 
       <div>
-        <label htmlFor={`${id}-secret`} className="text-13 font-medium text-ink">
-          {secretLabel}
+        <label htmlFor={`${id}-password`} className="text-13 font-medium text-ink">
+          Password
         </label>
         <div className="relative mt-1.5">
           <input
-            id={`${id}-secret`}
-            name={mode === 'password' ? 'password' : 'token'}
+            id={`${id}-password`}
+            name="password"
             type={revealed ? 'text' : 'password'}
-            autoComplete={mode === 'password' ? 'current-password' : 'off'}
+            autoComplete="current-password"
             autoCapitalize="none"
             autoCorrect="off"
             spellCheck={false}
-            value={mode === 'password' ? password : token}
-            onChange={(event) =>
-              mode === 'password' ? setPassword(event.target.value) : setToken(event.target.value)
-            }
-            className={`${INPUT_CLASS} pr-12 font-mono`}
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            className={`${INPUT_CLASS} pr-12`}
           />
           <button
             type="button"
-            aria-label={
-              revealed ? `Hide ${secretLabel.toLowerCase()}` : `Show ${secretLabel.toLowerCase()}`
-            }
+            aria-label={revealed ? 'Hide password' : 'Show password'}
             aria-pressed={revealed}
             onClick={() => setRevealed((value) => !value)}
             className="absolute top-0 right-0 inline-flex size-11 items-center justify-center text-muted hover:text-ink"
@@ -172,39 +142,6 @@ function SignInForm() {
             <RevealIcon aria-hidden="true" className="size-4" />
           </button>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setMode(mode === 'password' ? 'token' : 'password');
-            setProblem(null);
-          }}
-          className="mt-1.5 inline-flex min-h-6 items-center text-13 font-medium text-accent underline-offset-2 hover:underline pointer-coarse:min-h-11"
-        >
-          {mode === 'password'
-            ? 'Use a Basic token instead'
-            : 'Use a username and password instead'}
-        </button>
-      </div>
-
-      <div>
-        <label htmlFor={`${id}-key`} className="text-13 font-medium text-ink">
-          Access key
-        </label>
-        <input
-          id={`${id}-key`}
-          name="access-key"
-          autoComplete="off"
-          autoCapitalize="none"
-          autoCorrect="off"
-          spellCheck={false}
-          value={accessKey}
-          onChange={(event) => setAccessKey(event.target.value)}
-          aria-describedby={`${id}-key-hint`}
-          className={`${INPUT_CLASS} mt-1.5 font-mono`}
-        />
-        <p id={`${id}-key-hint`} className="mt-1.5 text-xs text-muted">
-          The value of the <code className="font-mono">MyAuthorizationx</code> header.
-        </p>
       </div>
 
       <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm text-ink">
@@ -242,8 +179,8 @@ function SignInForm() {
 }
 
 /**
- * The portal's own sign-in. It replaces the browser's built-in password
- * prompt, which must never appear: requests are not sent without credentials,
+ * The portal's own sign-in: a username and a password, nothing else. It
+ * replaces the browser's built-in password prompt, which must never appear: requests are not sent without credentials,
  * and a rejected pair is reported here, inline.
  */
 export function SignInDialog() {
@@ -262,10 +199,10 @@ export function SignInDialog() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <Dialog.Title className="text-base font-semibold text-ink">
-                Sign in to the Readie API
+                Sign in to Readie
               </Dialog.Title>
               <Dialog.Description className="mt-1 text-13 text-pretty text-muted">
-                Use the credentials from the hackathon brief. They stay in this browser.
+                Enter your username and password to load live data.
               </Dialog.Description>
             </div>
             <Dialog.Close asChild>

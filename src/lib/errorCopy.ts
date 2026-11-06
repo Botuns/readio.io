@@ -39,12 +39,12 @@ export function describeError(error: ApiError, subject: string): ErrorCopy {
       return error.status === null
         ? {
             title: 'Sign in to load live data',
-            description: `Live mode needs the API credentials from the hackathon brief. Sign in to load ${subject}, or switch to mock data.`,
+            description: `Live mode needs your username and password. Sign in to load ${subject}, or switch to mock data.`,
             canRetry: false,
           }
         : {
             title: 'The API rejected these credentials',
-            description: `The request for ${subject} was refused (${error.status}). Sign in again with the username, password and access key from the hackathon brief.`,
+            description: `The request for ${subject} was refused (${error.status}). Sign in again with your username and password.`,
             canRetry: true,
           };
     case 'not_found':

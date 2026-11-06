@@ -32,12 +32,12 @@ pnpm dev
 
 Both commands print a LAN URL so the app can be opened on a phone on the same Wi-Fi. The **Mock data / Live API** button in the top bar switches source at any time; the choice is saved per browser.
 
-**Signing in to the live API.** Live mode asks for the credentials in the portal's own sign-in dialog: the username and password behind the brief's Basic token (or the token itself, pasted as is) and the `MyAuthorizationx` value as the access key. To skip the dialog in local development, copy `.env.example` to `.env.local` and put the two values there.
+**Signing in to the live API.** Live mode asks for a username and password in the portal's own sign-in dialog. The app adds the `MyAuthorizationx` access key itself from `VITE_API_CUSTOM_AUTH`, so that value must be set for the build. To skip the dialog in local development, also put the Basic token in `.env.local`.
 
 | Variable | Purpose |
 |---|---|
-| `VITE_API_CUSTOM_AUTH` | Optional. Value of the `MyAuthorizationx` header, to skip the sign-in dialog locally |
-| `VITE_API_BASIC_AUTH` | Optional. Base64 part of the `Authorization: Basic` header, same purpose |
+| `VITE_API_CUSTOM_AUTH` | Value of the `MyAuthorizationx` header. The app adds it to every request; users are never asked for it |
+| `VITE_API_BASIC_AUTH` | Optional. Base64 part of the `Authorization: Basic` header, to skip the sign-in dialog locally |
 | `VITE_DATA_SOURCE` | Default source, `live` or `mock` (default `live`; `pnpm dev:mock` sets `mock`) |
 | `VITE_API_BASE_URL` | Path the browser calls (default `/api/jobs`, proxied) |
 | `API_PROXY_TARGET` | Upstream the dev and preview proxy forwards to (read by `vite.config.ts` only) |
@@ -100,7 +100,7 @@ Data flows one way: `fetch` → Zod validation → mapper → domain model → c
 
 **CORS.** The API only allows origins on `readie.io`, so the browser cannot call it from localhost or a demo host. The app calls a same-origin path (`/api/jobs`) that is proxied: Vite's proxy in dev and preview, a rewrite in `vercel.json` in production. The client still attaches all three headers on every call; the proxy adds nothing and only drops `Origin`.
 
-**Credentials and sign-in.** A deployed build contains no credentials. Choosing Live API opens a sign-in dialog; the pair is checked against the API before it is saved, a rejected pair is reported inline, and the values are kept in session storage (or local storage if "Stay signed in" is ticked). Three things together guarantee the browser's built-in password prompt never appears: no request is sent while nobody is signed in, `fetch` runs with `credentials: 'omit'`, and the dev proxy drops `WWW-Authenticate`. For local development the same two values can come from `.env.local` instead, which is gitignored; note that `VITE_` values are inlined into that build's bundle, which is why the deployed build is made without them. The remaining weakness is that the credentials sit in browser storage, readable by any script on the page. In a real product the client would hold a short-lived session cookie and a backend-for-frontend would attach the API credentials server side.
+**Credentials and sign-in.** The auditor signs in with a username and password; the app turns them into the `Authorization: Basic` header and adds the `MyAuthorizationx` access key itself from `VITE_API_CUSTOM_AUTH`. A deployed build therefore contains the access key but no username or password. The pair is checked against the API before it is saved, a rejected pair is reported inline, and it is kept in session storage (or local storage if "Stay signed in" is ticked). Three things together guarantee the browser's built-in password prompt never appears: no request is sent while nobody is signed in, `fetch` runs with `credentials: 'omit'`, and the dev proxy drops `WWW-Authenticate`. Two honest limits: `VITE_` values are inlined into the bundle, so the access key is readable by anyone who opens the deployed app, and the signed-in pair sits in browser storage. In a real product the client would hold a short-lived session cookie and a backend-for-frontend would attach both headers server side.
 
 **Async states.** Every query renders through `QueryState`, whose loading, error, empty and success props are all required, so a screen cannot skip one. Errors are a discriminated union (`network | timeout | http | not_found | unauthorized | parse`) with plain-language copy per kind, Retry, and a collapsible technical detail. Only transient kinds are retried automatically.
 
@@ -111,7 +111,7 @@ Data flows one way: `fetch` → Zod validation → mapper → domain model → c
 ## Testing
 
 - **Unit and integration, 215 tests** (`pnpm test`): room-name round trips, filter, search and sort, mappers, roll-ups, URL-state parsing, the API client (headers, each error kind, timeout, abort), credential storage, the sign-in dialog, and both pages rendering loading, error, empty and success through MSW.
-- **End to end, 22 tests** (`pnpm test:e2e`): row click, pasted URLs in three spellings, hard refresh, a real room name with a space, tab changes in the URL, Back and Forward across tabs and pages, keyboard shortcuts, mock scenarios, signing in to live mode (accepted and rejected credentials, against a stubbed API), no requests to other hosts, working with the network off, and the phone layout (no horizontal scroll, 44 px touch targets).
+- **End to end, 22 tests** (`pnpm test:e2e`): row click, pasted URLs in three spellings, hard refresh, a real room name with a space, tab changes in the URL, Back and Forward across tabs and pages, keyboard shortcuts, mock scenarios, signing in to live mode with a username and password (accepted and rejected, against a stubbed API), no requests to other hosts, working with the network off, and the phone layout (no horizontal scroll, 44 px touch targets).
 
 Playwright uses Chromium only with one worker. Its bundled Chromium does not support macOS 12, so on that system run `PW_CHANNEL=chrome pnpm test:e2e` to drive installed Chrome.
 
@@ -135,7 +135,7 @@ On the deployed site I verified in Chrome: the redirect from `/`, a row click, a
 vercel deploy --prod
 ```
 
-No credentials need to be set in Vercel. On the deployed site, choose **Live API** in the top bar and sign in. To make a deployment open in live mode by default, set `VITE_DATA_SOURCE=live` in the Vercel dashboard and redeploy.
+Set `VITE_API_CUSTOM_AUTH` (the `MyAuthorizationx` value) in the Vercel project's environment variables. No username or password is deployed: on the site, choose **Live API** in the top bar and sign in. To make a deployment open in live mode by default, also set `VITE_DATA_SOURCE=live` and redeploy.
 
 The Readie mark in the top bar and favicon is Readie's own logo, taken from readie.io for this take-home.
 

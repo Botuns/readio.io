@@ -19,13 +19,14 @@ interface GetOptions<T> {
   credentials?: CredentialInput;
 }
 
-/** Sent in mock mode when nobody is signed in; the mock layer does not check them. */
-const MOCK_CREDENTIALS: CredentialInput = { customAuth: 'mock', basicAuth: 'bW9jazptb2Nr' };
+/** Sent in mock mode when nobody is signed in; the mock layer does not check it. */
+const MOCK_CREDENTIALS: CredentialInput = { basicAuth: 'bW9jazptb2Nr' };
 
+/** The app adds the access key itself; a sign-in only supplies the Basic pair. */
 function authHeaders(credentials: CredentialInput): HeadersInit {
   return {
     'Content-Type': 'application/json',
-    MyAuthorizationx: credentials.customAuth,
+    MyAuthorizationx: env.VITE_API_CUSTOM_AUTH,
     Authorization: `Basic ${credentials.basicAuth}`,
   };
 }

@@ -40,7 +40,7 @@ describe('Basic auth helpers', () => {
 });
 
 describe('credential storage', () => {
-  const input = { basicAuth: encodeBasicAuth('auditor', 's3cret'), customAuth: 'KEY-1' };
+  const input = { basicAuth: encodeBasicAuth('auditor', 's3cret') };
 
   it('falls back to the build-time credentials when nobody is signed in', () => {
     expect(getCredentials()).toMatchObject({
@@ -51,7 +51,13 @@ describe('credential storage', () => {
 
   it('prefers signed-in credentials and records the username', () => {
     saveCredentials(input, false);
-    expect(getCredentials()).toEqual({ ...input, username: 'auditor', origin: 'signed_in' });
+    expect(getCredentials()).toEqual({
+      ...input,
+      // The access key is never supplied by the user; it comes from the environment.
+      customAuth: 'test-custom-auth',
+      username: 'auditor',
+      origin: 'signed_in',
+    });
   });
 
   it('keeps a session sign-in out of local storage, and a remembered one in it', () => {

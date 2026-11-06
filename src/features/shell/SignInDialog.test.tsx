@@ -12,7 +12,7 @@ import { renderApp } from '@/test/renderApp';
 vi.mock('@/api/env', () => ({
   env: {
     VITE_API_BASE_URL: 'http://localhost:3000/api/jobs',
-    VITE_API_CUSTOM_AUTH: '',
+    VITE_API_CUSTOM_AUTH: 'KEY-1',
     VITE_API_BASIC_AUTH: '',
     VITE_DATA_SOURCE: 'live',
   },
@@ -43,10 +43,9 @@ function requireCredentials() {
 }
 
 async function fillAndSubmit(user: ReturnType<typeof userEvent.setup>, password: string) {
-  const dialog = await screen.findByRole('dialog', { name: 'Sign in to the Readie API' });
+  const dialog = await screen.findByRole('dialog', { name: 'Sign in to Readie' });
   await user.type(within(dialog).getByLabelText('Username'), GOOD.username);
   await user.type(within(dialog).getByLabelText('Password'), password);
-  await user.type(within(dialog).getByLabelText('Access key'), GOOD.accessKey);
   await user.click(within(dialog).getByRole('button', { name: 'Sign in' }));
   return dialog;
 }
@@ -61,9 +60,7 @@ describe('sign-in', () => {
     const seen = requireCredentials();
     renderApp('/jobs/campaign/119');
 
-    expect(
-      await screen.findByRole('dialog', { name: 'Sign in to the Readie API' }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: 'Sign in to Readie' })).toBeInTheDocument();
     expect(
       // The page behind a modal dialog is hidden from assistive technology.
       await screen.findByRole('heading', { name: 'Sign in to load live data', hidden: true }),
@@ -96,46 +93,33 @@ describe('sign-in', () => {
     const dialog = await fillAndSubmit(user, 'wrong');
 
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(
-      'The API rejected these credentials',
+      'The API rejected this username and password',
     );
     expect(dialog).toBeInTheDocument();
     expect(getCredentials()).toBeNull();
   });
 
-  it('asks for every field before calling the API', async () => {
+  it('asks for a username and password before calling the API', async () => {
     const seen = requireCredentials();
     const user = userEvent.setup();
     renderApp('/jobs/campaign/119');
 
-    const dialog = await screen.findByRole('dialog', { name: 'Sign in to the Readie API' });
+    const dialog = await screen.findByRole('dialog', { name: 'Sign in to Readie' });
     await user.click(within(dialog).getByRole('button', { name: 'Sign in' }));
     expect(within(dialog).getByRole('alert')).toHaveTextContent(
       'Enter your username and password.',
     );
-
-    await user.type(within(dialog).getByLabelText('Username'), GOOD.username);
-    await user.type(within(dialog).getByLabelText('Password'), GOOD.password);
-    await user.click(within(dialog).getByRole('button', { name: 'Sign in' }));
-    expect(within(dialog).getByRole('alert')).toHaveTextContent('Enter the access key.');
     expect(seen).toEqual([]);
   });
 
-  it('accepts a pasted Basic token in place of a username and password', async () => {
-    requireCredentials();
+  it('asks only for a username and password, and adds the access key itself', async () => {
+    const seen = requireCredentials();
     const user = userEvent.setup();
     renderApp('/jobs/campaign/119');
 
-    const dialog = await screen.findByRole('dialog', { name: 'Sign in to the Readie API' });
-    await user.click(within(dialog).getByRole('button', { name: 'Use a Basic token instead' }));
-    await user.type(
-      within(dialog).getByLabelText('Basic token'),
-      `Basic ${encodeBasicAuth(GOOD.username, GOOD.password)}`,
-    );
-    await user.type(within(dialog).getByLabelText('Access key'), GOOD.accessKey);
-    await user.click(within(dialog).getByRole('button', { name: 'Sign in' }));
-
-    expect(await screen.findByRole('table', { name: 'Candidates' })).toBeInTheDocument();
-    expect(getCredentials()?.username).toBe('auditor');
+    const dialog = await fillAndSubmit(user, GOOD.password);
+    await waitFor(() => expect(dialog).not.toBeInTheDocument());
+    expect(seen.at(-1)?.accessKey).toBe('KEY-1');
   });
 
   it('can be dismissed, leaving a way back in', async () => {
@@ -143,15 +127,13 @@ describe('sign-in', () => {
     const user = userEvent.setup();
     renderApp('/jobs/campaign/119');
 
-    const dialog = await screen.findByRole('dialog', { name: 'Sign in to the Readie API' });
+    const dialog = await screen.findByRole('dialog', { name: 'Sign in to Readie' });
     await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
 
     const panel = await screen.findByRole('alert');
     await user.click(within(panel).getByRole('button', { name: 'Sign in' }));
-    expect(
-      await screen.findByRole('dialog', { name: 'Sign in to the Readie API' }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole('dialog', { name: 'Sign in to Readie' })).toBeInTheDocument();
   });
 
   it('remembers the sign-in on this device when asked', async () => {
@@ -159,7 +141,7 @@ describe('sign-in', () => {
     const user = userEvent.setup();
     renderApp('/jobs/campaign/119');
 
-    const dialog = await screen.findByRole('dialog', { name: 'Sign in to the Readie API' });
+    const dialog = await screen.findByRole('dialog', { name: 'Sign in to Readie' });
     await user.click(
       within(dialog).getByRole('checkbox', { name: 'Stay signed in on this device' }),
     );

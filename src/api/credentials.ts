@@ -6,12 +6,14 @@ import { env } from './env';
 /**
  * Where the API credentials come from.
  *
- * 1. The sign-in dialog. Values are kept in this browser only: in session
- *    storage by default, or in local storage when "Stay signed in" is ticked.
+ * 1. The sign-in dialog: a username and password, turned into the Basic token
+ *    here. Kept in this browser only: in session storage by default, or in
+ *    local storage when "Stay signed in" is ticked.
  * 2. Build-time env values, for local development with `.env.local`.
  *
- * A public deployment ships with neither, so no credential is ever in its
- * bundle; the auditor signs in at run time instead.
+ * The `MyAuthorizationx` access key is never asked for: the app adds it to
+ * every request from `VITE_API_CUSTOM_AUTH`. A public deployment therefore
+ * ships the access key but no username or password.
  */
 
 const STORAGE_KEY = 'readie:credentials';
@@ -20,7 +22,6 @@ const BASIC_PREFIX = /^basic\s+/i;
 const storedSchema = z.object({
   username: z.string().nullable(),
   basicAuth: z.string().min(1),
-  customAuth: z.string().min(1),
 });
 
 export interface ApiCredentials {
@@ -28,12 +29,13 @@ export interface ApiCredentials {
   username: string | null;
   /** Base64 part of the `Authorization: Basic` header. */
   basicAuth: string;
-  /** Value of the `MyAuthorizationx` header. */
+  /** Value of the `MyAuthorizationx` header. Always from the build's environment. */
   customAuth: string;
   origin: 'signed_in' | 'environment';
 }
 
-export type CredentialInput = Pick<ApiCredentials, 'basicAuth' | 'customAuth'>;
+/** What a sign-in supplies. The access key header is added from the environment. */
+export type CredentialInput = Pick<ApiCredentials, 'basicAuth'>;
 
 /** Base64 of `username:password`, safe for non-ASCII characters. */
 export function encodeBasicAuth(username: string, password: string): string {
@@ -78,7 +80,9 @@ function parseStored(raw: string): ApiCredentials | null {
   try {
     const json: unknown = JSON.parse(raw);
     const parsed = storedSchema.safeParse(json);
-    return parsed.success ? { ...parsed.data, origin: 'signed_in' } : null;
+    return parsed.success
+      ? { ...parsed.data, customAuth: env.VITE_API_CUSTOM_AUTH, origin: 'signed_in' }
+      : null;
   } catch {
     return null;
   }
@@ -101,7 +105,6 @@ export function saveCredentials(input: CredentialInput, remember: boolean): void
   const stored = JSON.stringify({
     username: usernameFromBasicAuth(input.basicAuth),
     basicAuth: input.basicAuth,
-    customAuth: input.customAuth,
   });
   writeStorage(STORAGE_KEY, remember ? null : stored, 'session');
   writeStorage(STORAGE_KEY, remember ? stored : null, 'local');

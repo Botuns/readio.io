@@ -265,7 +265,9 @@ test.describe('async states through mock scenarios', () => {
 });
 
 test.describe('live mode sign-in', () => {
-  const ACCOUNT = { username: 'auditor', password: 's3cret', accessKey: 'KEY-1' };
+  const ACCOUNT = { username: 'auditor', password: 's3cret' };
+  /** Set for the test build in playwright.config.ts; the user never types it. */
+  const ACCESS_KEY = 'e2e-access-key';
   const BASIC = `Basic ${Buffer.from(`${ACCOUNT.username}:${ACCOUNT.password}`).toString('base64')}`;
 
   /**
@@ -277,7 +279,7 @@ test.describe('live mode sign-in', () => {
     await page.route('**/api/jobs/**', async (route) => {
       const headers = route.request().headers();
       authorizations.push(headers.authorization ?? null);
-      if (headers.authorization === BASIC && headers.myauthorizationx === ACCOUNT.accessKey) {
+      if (headers.authorization === BASIC && headers.myauthorizationx === ACCESS_KEY) {
         await route.fulfill({ json: [] });
       } else {
         await route.fulfill({
@@ -291,10 +293,9 @@ test.describe('live mode sign-in', () => {
   }
 
   async function fillSignIn(page: Page, password: string): Promise<void> {
-    const dialog = page.getByRole('dialog', { name: 'Sign in to the Readie API' });
+    const dialog = page.getByRole('dialog', { name: 'Sign in to Readie' });
     await dialog.getByLabel('Username').fill(ACCOUNT.username);
     await dialog.getByLabel('Password', { exact: true }).fill(password);
-    await dialog.getByLabel('Access key').fill(ACCOUNT.accessKey);
   }
 
   test('choosing Live API opens the sign-in dialog, then loads live data with those credentials', async ({
@@ -307,7 +308,7 @@ test.describe('live mode sign-in', () => {
     await page.getByRole('button', { name: /Data source/ }).click();
     await page.getByRole('radio', { name: /Live API/ }).click();
 
-    const dialog = page.getByRole('dialog', { name: 'Sign in to the Readie API' });
+    const dialog = page.getByRole('dialog', { name: 'Sign in to Readie' });
     await expect(dialog).toBeVisible();
     // Nothing has been sent to the API, so the browser has had no 401 to react to.
     expect(authorizations).toEqual([]);
@@ -340,14 +341,16 @@ test.describe('live mode sign-in', () => {
     });
 
     await page.goto('/jobs/campaign/119');
-    const dialog = page.getByRole('dialog', { name: 'Sign in to the Readie API' });
+    const dialog = page.getByRole('dialog', { name: 'Sign in to Readie' });
     await expect(dialog).toBeVisible();
     expect(authorizations).toEqual([]);
 
     await fillSignIn(page, 'wrong-password');
     await dialog.getByRole('button', { name: 'Sign in', exact: true }).click();
 
-    await expect(dialog.getByRole('alert')).toContainText('The API rejected these credentials');
+    await expect(dialog.getByRole('alert')).toContainText(
+      'The API rejected this username and password',
+    );
     await expect(dialog).toBeVisible();
     expect(authorizations).toHaveLength(1);
     expect(nativeDialogs).toEqual([]);
