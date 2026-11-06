@@ -19,13 +19,11 @@ export function TopBar({ onOpenShortcuts }: TopBarProps) {
           className="flex min-h-11 min-w-0 items-center gap-2.5 rounded-control"
           aria-label="Readie Integrity Audit, go to campaign overview"
         >
-          <svg viewBox="0 0 32 32" aria-hidden="true" className="size-7 shrink-0">
-            <rect width="32" height="32" rx="8" className="fill-accent" />
-            <path
-              d="M10 23V9h7.2a4.6 4.6 0 0 1 1.5 8.95L22.4 23h-3.7l-3.2-4.6H13.2V23H10Zm3.2-7.4h3.7a1.8 1.8 0 0 0 0-3.6h-3.7v3.6Z"
-              fill="#fff"
-            />
-          </svg>
+          {/* Readie's own mark, as served on readie.io. */}
+          <picture className="shrink-0">
+            <source srcSet="/readie-mark.webp" type="image/webp" />
+            <img src="/readie-mark.png" alt="" width={27} height={28} className="h-7 w-auto" />
+          </picture>
           <span className="truncate text-sm font-semibold tracking-tight whitespace-nowrap text-ink">
             Readie <span className="font-normal text-muted">Integrity audit</span>
           </span>
