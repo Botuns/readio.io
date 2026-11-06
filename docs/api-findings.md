@@ -33,7 +33,7 @@ There is no verification-status field. The spec's `COMPLETED | IN_PROGRESS | FAI
 
 Returns a bare JSON array of **recording segments** (1 to 16 per room, roughly one every four minutes), not a single evaluation. Order is not chronological.
 
-Per segment: `roomName`, `recordingType` (`COMPOSITE`), `databaseType`, `campaignId`, `userId`, `status` (`PERSISTED` 64, `FAILED` 1), `attempts`, `lastError` (always null), `egressId`, `objectPath`, `finalUrl`, `participantIdentity` (always null), `campaignRecordId`, `parsedCampaignId` (string), `extractedEmail` (unreliable: usually contains the hash), `campaignAssessments` (array), `createdAt` / `updatedAt` / `persistedAt` / `nextCheckAt` (ISO **without** offset; they match the campaign's UTC values, so they are UTC), `analyticsCompleted` (`"Y"` 12, `"N"` 52, `"P"` 1; a string here, a boolean on the campaign endpoint), and `analytic` (object or null; null on 53 of 65 segments).
+Per segment: `roomName`, `recordingType` (`COMPOSITE`), `databaseType`, `campaignId`, `userId`, `status` (`PERSISTED` 64, `FAILED` 1), `attempts`, `lastError` (always null), `egressId`, `objectPath`, `finalUrl`, `participantIdentity` (always null), `campaignRecordId` (null on the one `FAILED` segment, along with `finalUrl` and `persistedAt`), `parsedCampaignId` (string), `extractedEmail` (unreliable: usually contains the hash), `campaignAssessments` (array), `createdAt` / `updatedAt` / `persistedAt` / `nextCheckAt` (ISO **without** offset; they match the campaign's UTC values, so they are UTC), `analyticsCompleted` (`"Y"` 12, `"N"` 52, `"P"` 1; a string here, a boolean on the campaign endpoint), and `analytic` (object or null; null on 53 of 65 segments).
 
 The room response carries no candidate name or email.
 
