@@ -7,15 +7,15 @@ export function RoomSkeleton() {
   return (
     <div aria-busy="true">
       <div className="rounded-card border border-line bg-surface p-4">
-        <Skeleton className="h-3.5 w-40" />
+        <Skeleton className="h-4.5 w-40" />
         <div className="mt-3 flex flex-wrap gap-1.5">
-          <Skeleton className="h-8 w-24 rounded-control" />
-          {[0, 1, 2, 3, 4, 5].map((tick) => (
-            <Skeleton key={tick} className="size-8 rounded-control" />
+          <Skeleton className="h-8 w-24 rounded-control pointer-coarse:h-11" />
+          {[0, 1].map((tick) => (
+            <Skeleton key={tick} className="size-8 rounded-control pointer-coarse:size-11" />
           ))}
         </div>
       </div>
-      <Skeleton className="mt-4 h-11 w-full rounded-control md:w-96" />
+      <Skeleton className="mt-6 h-12 w-full rounded-control md:mt-4 md:h-11 md:w-96" />
       <div className="mt-4 space-y-2">
         {ENTRIES.map((entry) => (
           <div

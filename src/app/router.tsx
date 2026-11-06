@@ -9,17 +9,14 @@ const loadCampaignPage = () => import('@/features/campaign/CampaignPage');
 const loadRoomPage = () => import('@/features/room/RoomPage');
 
 /**
- * Fetches both page chunks once the browser is idle. The first drill-down then
- * needs no extra download, and a session that loses its connection can still
- * move between pages.
+ * Starts downloading both page chunks in parallel with app start-up, rather
+ * than after the router asks for one. The first paint does not wait on a
+ * second round trip, the first drill-down needs no extra download, and a
+ * session that loses its connection can still move between pages.
  */
 export function preloadRoutes(): void {
-  const preload = () => {
-    void loadCampaignPage();
-    void loadRoomPage();
-  };
-  if ('requestIdleCallback' in window) window.requestIdleCallback(preload, { timeout: 3000 });
-  else setTimeout(preload, 1500);
+  void loadCampaignPage();
+  void loadRoomPage();
 }
 
 /**

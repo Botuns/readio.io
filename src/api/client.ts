@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 import { env } from './env';
 import type { ApiError, ApiResult } from './errors';
+import { whenApiReady } from './ready';
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 const MAX_REPORTED_ISSUES = 5;
@@ -56,6 +57,7 @@ export async function apiGet<T>({
   try {
     let response: Response;
     try {
+      await whenApiReady();
       response = await fetch(endpoint, {
         method: 'GET',
         headers: authHeaders(),

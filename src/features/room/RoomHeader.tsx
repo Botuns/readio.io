@@ -63,6 +63,8 @@ export function RoomHeader({
   const fallbackTitle = fallbackEmail ?? 'Unknown candidate';
   const submittedAt = job?.submittedAt ?? room.data?.segments[0]?.startedAt ?? null;
   const verdict = room.data === undefined ? null : summariseVerdict(room.data.segments);
+  // Only a lookup that is actually running reserves space for its result.
+  const candidatePending = campaignId !== null && candidate.isPending;
 
   return (
     <header>
@@ -94,7 +96,9 @@ export function RoomHeader({
               loading={
                 <div aria-busy="true">
                   <Skeleton className="h-7 w-56 md:h-8.5" />
-                  <Skeleton className="mt-2.5 h-4 w-44" />
+                  <div className="mt-1 flex h-7 items-center pointer-coarse:h-11">
+                    <Skeleton className="h-4 w-44" />
+                  </div>
                 </div>
               }
               error={({ retry, isRetrying }) => (
@@ -143,8 +147,8 @@ export function RoomHeader({
         </Button>
       </div>
 
-      <dl className="mt-4 grid gap-x-8 gap-y-3 text-13 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_auto]">
-        <div className="min-w-0">
+      <dl className="mt-4 grid grid-cols-[auto_1fr] gap-x-8 gap-y-3 text-13 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)_auto_auto]">
+        <div className="col-span-2 min-w-0 md:col-span-1">
           <dt className="eyebrow">Room identifier</dt>
           <dd className="mt-0.5 flex items-center gap-1">
             <span className="min-w-0 font-mono text-xs break-all text-ink">{roomName}</span>
@@ -155,12 +159,12 @@ export function RoomHeader({
             />
           </dd>
         </div>
-        <div>
+        <div className="col-span-2 md:col-span-1">
           <dt className="eyebrow">{job === null ? 'Recording started' : 'Submitted'}</dt>
-          <dd className="tabular mt-1.5 text-ink">
+          <dd className="tabular mt-1.5 min-h-4.5 text-ink">
             {submittedAt === null ? (
-              room.isPending && candidate.isPending ? (
-                <Skeleton className="h-4 w-40" />
+              room.isPending || candidatePending ? (
+                <Skeleton className="h-4 w-48" />
               ) : (
                 'No timestamp'
               )
@@ -172,31 +176,33 @@ export function RoomHeader({
             )}
           </dd>
         </div>
-        <div className="flex gap-8">
-          {job !== null && (
-            <div>
-              <dt className="eyebrow">Verification</dt>
-              <dd className="mt-1">
-                <VerificationPill value={job.verificationStatus} size="md" />
-              </dd>
-            </div>
-          )}
+        {(job !== null || candidatePending) && (
           <div>
-            <dt className="eyebrow">Integrity</dt>
+            <dt className="eyebrow">Verification</dt>
             <dd className="mt-1">
-              {room.isPending ? (
-                <Skeleton className="h-7 w-24" />
-              ) : verdict === null ? (
-                <span className="inline-flex h-7 items-center text-muted">Unavailable</span>
-              ) : verdict.verdict === null ? (
-                <Pill tone="neutral" Icon={CircleDashed} size="md">
-                  Not yet analysed
-                </Pill>
+              {job === null ? (
+                <Skeleton className="h-7 w-28" />
               ) : (
-                <VerdictTag value={verdict.verdict} size="md" />
+                <VerificationPill value={job.verificationStatus} size="md" />
               )}
             </dd>
           </div>
+        )}
+        <div>
+          <dt className="eyebrow">Integrity</dt>
+          <dd className="mt-1">
+            {room.isPending ? (
+              <Skeleton className="h-7 w-24" />
+            ) : verdict === null ? (
+              <span className="inline-flex h-7 items-center text-muted">Unavailable</span>
+            ) : verdict.verdict === null ? (
+              <Pill tone="neutral" Icon={CircleDashed} size="md">
+                Not yet analysed
+              </Pill>
+            ) : (
+              <VerdictTag value={verdict.verdict} size="md" />
+            )}
+          </dd>
         </div>
       </dl>
     </header>

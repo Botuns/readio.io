@@ -244,7 +244,7 @@ test.describe('async states through mock scenarios', () => {
       timeout: 15_000,
     });
 
-    await page.getByRole('button', { name: 'Data source' }).click();
+    await page.getByRole('button', { name: /Data source/ }).click();
     await page.getByRole('radio', { name: 'Normal' }).click();
     await expect(page.locator('[data-job-row]')).toHaveCount(4);
   });
@@ -294,7 +294,7 @@ test.describe('offline and mobile', () => {
   test('keeps working with the network switched off', async ({ page, context }) => {
     await page.goto('/jobs/campaign/119');
     await expect(page.locator('[data-job-row]')).toHaveCount(4);
-    // Both page chunks are preloaded when the browser is idle.
+    // Both page chunks are preloaded at start-up.
     await page.waitForLoadState('networkidle');
 
     await context.setOffline(true);
