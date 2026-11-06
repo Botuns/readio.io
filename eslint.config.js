@@ -8,6 +8,7 @@ import tseslint from 'typescript-eslint';
 export default defineConfig([
   globalIgnores([
     'dist',
+    'dist-e2e',
     'coverage',
     'playwright-report',
     'test-results',
@@ -45,7 +46,7 @@ export default defineConfig([
     },
   },
   {
-    files: ['vite.config.ts', 'playwright.config.ts'],
+    files: ['vite.config.ts', 'playwright.config.ts', 'e2e/**/*.ts'],
     languageOptions: { globals: globals.node },
     rules: { 'no-restricted-syntax': 'off' },
   },

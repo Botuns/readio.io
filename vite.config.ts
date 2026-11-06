@@ -39,7 +39,13 @@ export default defineConfig(({ mode }) => {
     resolve: { tsconfigPaths: true },
     server: { proxy },
     preview: { proxy },
-    build: { target: 'es2022', sourcemap: false },
+    build: {
+      target: 'es2022',
+      sourcemap: false,
+      // The only chunk above 500 kB is the mock layer (MSW plus fixtures), which
+      // is loaded on demand and never in live mode.
+      chunkSizeWarningLimit: 600,
+    },
     test: {
       globals: true,
       environment: 'jsdom',

@@ -52,7 +52,7 @@ export function RoomTabs({ tab, onTabChange, flaggedCount, panels }: RoomTabsPro
                 key={definition.value}
                 value={definition.value}
                 aria-keyshortcuts={definition.shortcut}
-                className="relative flex h-10 items-center justify-center gap-1.5 rounded-chip text-13 font-medium text-muted transition-colors duration-150 hover:text-ink data-[state=active]:text-ink md:h-11 md:rounded-none md:text-sm"
+                className="relative flex h-11 items-center justify-center gap-1.5 rounded-chip text-13 font-medium text-muted transition-colors duration-150 hover:text-ink data-[state=active]:text-ink md:h-11 md:rounded-none md:text-sm"
               >
                 {active && (
                   <motion.span

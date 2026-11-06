@@ -5,6 +5,7 @@ import './index.css';
 import { StrictMode, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './app/App';
+import { preloadRoutes } from './app/router';
 import { StartupError } from './app/StartupError';
 import { getDataSource } from './lib/dataSource';
 
@@ -22,6 +23,9 @@ function mount(node: ReactNode): void {
 }
 
 prepare().then(
-  () => mount(<App />),
+  () => {
+    mount(<App />);
+    preloadRoutes();
+  },
   (error: unknown) => mount(<StartupError error={error} />),
 );

@@ -72,7 +72,7 @@ export function RoomHeader({
         ) : (
           <Link
             to={campaignPath(campaignId)}
-            className="tabular -mx-1 rounded px-1 py-1 font-medium hover:text-ink"
+            className="tabular -mx-1 inline-flex items-center rounded px-1 py-1 font-medium hover:text-ink pointer-coarse:min-h-11"
           >
             Campaign {campaignId}
           </Link>
