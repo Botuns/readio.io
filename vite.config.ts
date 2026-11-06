@@ -47,6 +47,13 @@ export default defineConfig(({ mode }) => {
       include: ['src/**/*.test.{ts,tsx}'],
       css: false,
       maxWorkers: 2,
+      // Node's fetch needs an absolute URL; the browser build uses the relative proxy path.
+      env: {
+        VITE_API_BASE_URL: 'http://localhost:3000/api/jobs',
+        VITE_API_CUSTOM_AUTH: 'test-custom-auth',
+        VITE_API_BASIC_AUTH: 'dGVzdDp0ZXN0',
+        VITE_DATA_SOURCE: 'mock',
+      },
     },
   };
 });

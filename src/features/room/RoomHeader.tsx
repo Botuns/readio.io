@@ -172,20 +172,31 @@ export function RoomHeader({
             )}
           </dd>
         </div>
-        <div>
-          <dt className="eyebrow">Status</dt>
-          <dd className="mt-1 flex flex-wrap items-center gap-2">
-            {job !== null && <VerificationPill value={job.verificationStatus} size="md" />}
-            {room.isPending ? (
-              <Skeleton className="h-7 w-24" />
-            ) : verdict === null ? null : verdict.verdict === null ? (
-              <Pill tone="neutral" Icon={CircleDashed} size="md">
-                Not yet analysed
-              </Pill>
-            ) : (
-              <VerdictTag value={verdict.verdict} size="md" />
-            )}
-          </dd>
+        <div className="flex gap-8">
+          {job !== null && (
+            <div>
+              <dt className="eyebrow">Verification</dt>
+              <dd className="mt-1">
+                <VerificationPill value={job.verificationStatus} size="md" />
+              </dd>
+            </div>
+          )}
+          <div>
+            <dt className="eyebrow">Integrity</dt>
+            <dd className="mt-1">
+              {room.isPending ? (
+                <Skeleton className="h-7 w-24" />
+              ) : verdict === null ? (
+                <span className="inline-flex h-7 items-center text-muted">Unavailable</span>
+              ) : verdict.verdict === null ? (
+                <Pill tone="neutral" Icon={CircleDashed} size="md">
+                  Not yet analysed
+                </Pill>
+              ) : (
+                <VerdictTag value={verdict.verdict} size="md" />
+              )}
+            </dd>
+          </div>
         </div>
       </dl>
     </header>

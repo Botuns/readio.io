@@ -172,6 +172,13 @@
     cursor: pointer;
   }
 
+  /* Room identifiers contain `~~`; ligatures would draw it as one glyph. */
+  .font-mono,
+  code,
+  kbd {
+    font-variant-ligatures: none;
+  }
+
   mark {
     background: color-mix(in srgb, var(--accent) 22%, transparent);
     color: inherit;

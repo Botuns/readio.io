@@ -85,7 +85,7 @@ function GazeCard({ check }: { check: CheckSummary }) {
   return (
     <Card title="Gaze tracking index" aside={<RiskPill value={check.risk} />}>
       <Meter
-        label="Gaze and off-screen activity model confidence"
+        label="Gaze tracking index, model confidence"
         value={check.lowestConfidence}
         tone={riskMeta(check.risk).tone}
       />
