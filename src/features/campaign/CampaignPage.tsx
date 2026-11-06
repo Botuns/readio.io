@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Inbox, SearchX } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router';
 import { campaignJobsQuery } from '@/api/endpoints';
 import { Button, ButtonLink } from '@/components/ui/Button';
@@ -20,11 +20,16 @@ import { useTypedSearchParams } from '@/lib/useTypedSearchParams';
 import { CampaignSkeleton } from './CampaignSkeleton';
 import { CampaignSwitcher } from './CampaignSwitcher';
 import { campaignSearchParams } from './campaignSearchParams';
-import { FiltersSheet } from './FiltersSheet';
 import { JobCardList } from './JobCardList';
 import { JobsTable } from './JobsTable';
 import { JobsToolbar } from './JobsToolbar';
 import { SummaryStrip } from './SummaryStrip';
+
+/** The bottom sheet (and its drawer library) is only downloaded when Filters is first opened. */
+const FiltersSheet = lazy(async () => {
+  const module = await import('./FiltersSheet');
+  return { default: module.FiltersSheet };
+});
 
 const SEARCH_DEBOUNCE_MS = 250;
 const CAMPAIGN_ID_PATTERN = /^\d+$/;
@@ -130,6 +135,8 @@ function JobsView({ jobs, isRefreshing }: JobsViewProps) {
   const isDesktop = useMediaQuery(DESKTOP_QUERY);
   const searchRef = useRef<HTMLInputElement>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  // Stays true after the first open so the sheet can animate closed.
+  const [sheetWanted, setSheetWanted] = useState(false);
 
   // The input keeps its own draft so typing stays instant; the URL follows after a pause.
   const [draft, setDraft] = useState(filters.q);
@@ -206,7 +213,10 @@ function JobsView({ jobs, isRefreshing }: JobsViewProps) {
           activeFilterCount={
             (filters.status === undefined ? 0 : 1) + (filters.sort === 'submitted_desc' ? 0 : 1)
           }
-          onOpenFilters={() => setSheetOpen(true)}
+          onOpenFilters={() => {
+            setSheetWanted(true);
+            setSheetOpen(true);
+          }}
         />
       </div>
 
@@ -235,18 +245,22 @@ function JobsView({ jobs, isRefreshing }: JobsViewProps) {
         <JobCardList jobs={visible} query={draft} />
       )}
 
-      <FiltersSheet
-        open={sheetOpen}
-        onOpenChange={setSheetOpen}
-        counts={counts}
-        total={jobs.length}
-        resultCount={visible.length}
-        status={filters.status}
-        onStatusChange={setStatus}
-        sort={filters.sort}
-        onSortChange={setSort}
-        onClear={clearFilters}
-      />
+      {sheetWanted && (
+        <Suspense fallback={null}>
+          <FiltersSheet
+            open={sheetOpen}
+            onOpenChange={setSheetOpen}
+            counts={counts}
+            total={jobs.length}
+            resultCount={visible.length}
+            status={filters.status}
+            onStatusChange={setStatus}
+            sort={filters.sort}
+            onSortChange={setSort}
+            onClear={clearFilters}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

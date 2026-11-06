@@ -1,5 +1,5 @@
 import { ChevronDown } from 'lucide-react';
-import { motion } from 'motion/react';
+import * as m from 'motion/react-m';
 import { Link, useNavigate } from 'react-router';
 import { cn } from '@/lib/cn';
 import { getDataSource } from '@/lib/dataSource';
@@ -44,7 +44,7 @@ export function CampaignSwitcher({ campaignId }: CampaignSwitcherProps) {
               )}
             >
               {active && (
-                <motion.span
+                <m.span
                   layoutId="campaign-switcher-thumb"
                   className="absolute inset-0 rounded-chip bg-(--btn-secondary-bg) shadow-(--btn-secondary-shadow)"
                 />

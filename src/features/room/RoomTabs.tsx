@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import * as m from 'motion/react-m';
 import { Tabs } from 'radix-ui';
 import type { ReactNode } from 'react';
 import type { RoomTab } from '@/lib/routes';
@@ -55,7 +55,7 @@ export function RoomTabs({ tab, onTabChange, flaggedCount, panels }: RoomTabsPro
                 className="relative flex h-11 items-center justify-center gap-1.5 rounded-chip text-13 font-medium text-muted transition-colors duration-150 hover:text-ink data-[state=active]:text-ink md:h-11 md:rounded-none md:text-sm"
               >
                 {active && (
-                  <motion.span
+                  <m.span
                     layoutId="room-tab-indicator"
                     className="absolute inset-0 rounded-chip bg-(--btn-secondary-bg) shadow-(--btn-secondary-shadow) md:inset-x-0 md:top-auto md:-bottom-px md:h-0.5 md:rounded-none md:bg-accent md:shadow-none"
                   />
@@ -80,9 +80,9 @@ export function RoomTabs({ tab, onTabChange, flaggedCount, panels }: RoomTabsPro
           value={definition.value}
           className="mt-4 outline-none md:mt-5"
         >
-          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
+          <m.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
             {panels[definition.value]}
-          </motion.div>
+          </m.div>
         </Tabs.Content>
       ))}
     </Tabs.Root>

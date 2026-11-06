@@ -1,8 +1,12 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { setScenario } from '@/mocks/scenarios';
 import { server } from '@/mocks/server';
+
+// Route chunks are imported on demand, and the first import in a file can take
+// over a second on slow hardware. The default one-second wait is too tight.
+configure({ asyncUtilTimeout: 5000 });
 
 /** Width the fake `matchMedia` reports. Tests switch it to exercise the mobile layout. */
 export const viewport = { width: 1280 };

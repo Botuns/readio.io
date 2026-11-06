@@ -1,12 +1,22 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { Outlet, ScrollRestoration } from 'react-router';
-import { ShortcutsSheet } from '@/features/shell/ShortcutsSheet';
 import { TopBar } from '@/features/shell/TopBar';
 import { useHotkeys } from '@/lib/useHotkeys';
 
+/** Downloaded the first time the shortcuts list is opened. */
+const ShortcutsSheet = lazy(async () => {
+  const module = await import('@/features/shell/ShortcutsSheet');
+  return { default: module.ShortcutsSheet };
+});
+
 export function RootLayout() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
-  useHotkeys({ '?': () => setShortcutsOpen(true) });
+  const [shortcutsWanted, setShortcutsWanted] = useState(false);
+  const openShortcuts = () => {
+    setShortcutsWanted(true);
+    setShortcutsOpen(true);
+  };
+  useHotkeys({ '?': openShortcuts });
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -16,7 +26,7 @@ export function RootLayout() {
       >
         Skip to content
       </a>
-      <TopBar onOpenShortcuts={() => setShortcutsOpen(true)} />
+      <TopBar onOpenShortcuts={openShortcuts} />
       <main
         id="main"
         tabIndex={-1}
@@ -24,7 +34,11 @@ export function RootLayout() {
       >
         <Outlet />
       </main>
-      <ShortcutsSheet open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+      {shortcutsWanted && (
+        <Suspense fallback={null}>
+          <ShortcutsSheet open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
+        </Suspense>
+      )}
       {/* Returning to the table with Back restores where the auditor had scrolled to. */}
       <ScrollRestoration />
     </div>

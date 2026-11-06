@@ -1,19 +1,27 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "buildCommand": "pnpm build",
+  "buildCommand": "pnpm exec tsc -b && pnpm exec vite build --mode mock",
   "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/api/jobs/:path*",
       "destination": "https://readie001.uc.r.appspot.com/auth/recording/jobs/:path*"
     },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
     {
       "source": "/mockServiceWorker.js",
-      "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
     }
   ]
 }
